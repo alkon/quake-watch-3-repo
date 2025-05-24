@@ -1,4 +1,4 @@
-name: Publish Image & Chart
+name: Publish Image & Chart to GHCR
 
 on:
   push:
@@ -18,13 +18,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Decide on your image tag (the commit SHA)
+      # 2. Set IMAGE_TAG = the commit SHA
       - name: Set IMAGE_TAG
         id: vars
         run: echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_OUTPUT
 
-      # 3. Log in to GHCR and push the image
-      - name: Log in to GitHub Container Registry
+      # 3. Authenticate Docker to GHCR and push the image
+      - name: Log in to GHCR (Docker)
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -42,32 +42,27 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4
         with:
-          version: v3.14.0
+          version: latest
 
-      # 5. Restore your Docker config for OCI pushes (*)
-      - name: Restore Docker config
+      # 5. Authenticate Helm’s OCI client to GHCR
+      - name: Log in to GHCR (Helm OCI)
         run: |
-          mkdir -p ~/.docker
-          echo "${{ secrets.DOCKER_CONFIG }}" | base64 -d > ~/.docker/config.json
+          echo "${{ secrets.GITHUB_TOKEN }}" \
+            | helm registry login ghcr.io \
+                --username "${{ github.actor }}" \
+                --password-stdin
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      # (Optional) ensure charts folder exists
+      # 6. Prepare charts folder
       - name: Prepare charts directory
         run: mkdir -p ./charts
 
-      # 6. Package your chart
+      # 7. Package the chart
       - name: Package Helm chart
         run: helm package quakewatch-web-chart/ --destination ./charts
 
-      # 7. Push the chart as an OCI artifact
-      - name: Push Helm chart to Docker Hub OCI
+      # 8. Push the chart as an OCI artifact to GHCR
+      - name: Push Helm chart to GHCR
         run: |
           helm push \
             ./charts/quakewatch-web-chart-*.tgz \
-            oci://registry-1.docker.io/${{ secrets.DOCKERHUB_USERNAME }}/quakewatch-web-chart
+            oci://ghcr.io/${{ github.repository_owner }}/quakewatch-web-chart
