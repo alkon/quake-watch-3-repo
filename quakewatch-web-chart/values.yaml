@@ -2,8 +2,8 @@
 replicaCount: 2
 
 image:
-  repository: alkon100/quakewatch-web
-  tag: "2.0.1"
+  repository: ghcr.io/alkon/quakewatch-web-app
+  tag: latest
   pullPolicy: IfNotPresent
 
 containerPort: 5000
