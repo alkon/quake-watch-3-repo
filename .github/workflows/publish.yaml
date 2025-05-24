@@ -2,7 +2,10 @@ name: Publish Image & Chart
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main # Or your main branch (e.g., master)
+#    paths:
+#      - "*-chart/**" # Trigger only on changes in the *-chart directory
 
 permissions:
   contents: read
