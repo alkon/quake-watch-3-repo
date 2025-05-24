@@ -1,0 +1,31 @@
+# quakewatch-web-chart/templates/tests/test-log-paths.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "quakewatch-web-chart.fullname" . }}-test-logs-path"
+  annotations:
+    "helm.sh/hook": test
+  labels:
+    {{- include "quakewatch-web-chart.labels" . | nindent 4 }}
+spec:
+  restartPolicy: Never
+  containers:
+    - name: check-logs-dir
+      image: busybox
+      command: [ "sh", "-c" ]
+      args:
+        - |
+          if [ -d {{ .Values.configMap.data.shared_log_path }} ]; then
+            echo "Directory exists: {{ .Values.configMap.data.shared_log_path }}"
+            exit 0
+          else
+            echo "Directory not found: {{ .Values.configMap.data.shared_log_path }}"
+            exit 1
+          fi
+      volumeMounts:
+        - name: log-volume
+          mountPath: {{ .Values.configMap.data.shared_log_path | quote }}
+  volumes:
+    - name: log-volume
+      persistentVolumeClaim:
+        claimName: {{ default (include "quakewatch-web-chart.fullname" .) .Values.pvc.name }}

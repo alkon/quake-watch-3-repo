@@ -1,0 +1,9 @@
+#  quakewatch-web-chart/Chart.yaml
+apiVersion: v2
+name: quakewatch-web-chart
+description: Helm chart for the QuakeWatch earthquake monitoring app
+type: application
+
+version: v1.0.1 # Important! Prefix with 'v'
+
+appVersion: "1.0.0" # informational only

@@ -1,0 +1,45 @@
+# quakewatch-web-chart/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "quakewatch-web-chart.fullname" . }}
+  labels:
+    {{- include "quakewatch-web-chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "quakewatch-web-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "quakewatch-web-chart.selectorLabels" . | nindent 8 }}
+    spec:
+      # --- New additions to Pod spec ---
+      shareProcessNamespace: true # Enable shared PID namespace for all containers in this pod
+      volumes:
+        - name: log-volume
+          persistentVolumeClaim:
+            # Reference the PVC by its name, using the same logic as in pvc.yaml
+            claimName: {{ default (include "quakewatch-web-chart.fullname" .) .Values.pvc.name }}
+      # --- End of new additions to Pod spec ---
+      containers:
+        - name: {{ include "quakewatch-web-chart.name" . }}-container
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: {{ .Values.portName}}
+              containerPort: {{ .Values.containerPort }}
+
+          # --- New additions to Container spec ---
+          volumeMounts:
+            - name: log-volume
+              mountPath: {{ .Values.configMap.data.shared_log_path | quote }} # Use the value from ConfigMap
+          env:
+            - name: SHARED_LOG_PATH
+              valueFrom:
+                configMapKeyRef:
+                  # Reference the ConfigMap by its name, using the same logic as in configmap.yaml
+                  name: {{ default (include "quakewatch-web-chart.fullname" .) .Values.configMap.name }}
+                  key: shared_log_path # Key name from values.yaml
+          # --- End of new additions to Container spec ---

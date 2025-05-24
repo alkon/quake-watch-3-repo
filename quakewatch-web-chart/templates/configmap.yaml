@@ -1,0 +1,12 @@
+# quakewatch-web-chart/templates/configmap.yaml
+{{- if .Values.configMap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # Using the specified name from values.yaml, or fallback to fullname helper
+  name: {{ default (include "quakewatch-web-chart.fullname" .) .Values.configMap.name }}
+  labels:
+    {{- include "quakewatch-web-chart.labels" . | nindent 4 }}
+data:
+  {{- toYaml .Values.configMap.data | nindent 2 }}
+{{- end }}

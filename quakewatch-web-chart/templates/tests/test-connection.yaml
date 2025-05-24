@@ -1,0 +1,20 @@
+# quakewatch-web-chart/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "quakewatch-web-chart.fullname" . }}-test-connection"
+  labels:
+    {{- include "quakewatch-web-chart.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl
+      command: [ "curl" ]
+      args: [ "-s", "{{ include "quakewatch-web-chart.fullname" . }}:{{ .Values.service.port }}/"]
+#    - name: wget
+#      image: busybox
+#      command: ['wget']
+#      args: ['{{ include "quakewatch-web-chart.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

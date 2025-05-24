@@ -1,0 +1,30 @@
+# quakewatch-web-chart/values.yaml
+replicaCount: 2
+
+image:
+  repository: alkon100/quakewatch-web
+  tag: "2.0.1"
+  pullPolicy: IfNotPresent
+
+containerPort: 5000
+portName: http
+
+service:
+  type: LoadBalancer
+  port: 5011
+  targetPort: 5000
+
+# --- ENSURE THIS 'pvc' BLOCK IS PRESENT AND CORRECTLY INDENTED ---
+pvc:
+  enabled: true
+  name: "quake-logs-pvc" # You can keep this static or use fullname helper if preferred
+  accessModes:
+    - ReadWriteOnce
+  storage: "1Gi"
+  storageClassName: "hostpath" # <--- Set this to your default StorageClass name
+
+configMap:
+  enabled: true
+  name: "log-paths-cfm" # You can keep this static or use fullname helper if preferred
+  data:
+    shared_log_path: "/shared-logs" # This must match the mountPath in deployment
