@@ -44,7 +44,7 @@ jobs:
         with:
           version: v3.14.0
 
-      # 5. Restore your Docker config for OCI pushes
+      # 5. Restore your Docker config for OCI pushes (*)
       - name: Restore Docker config
         run: |
           mkdir -p ~/.docker
