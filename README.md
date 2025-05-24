@@ -14,6 +14,21 @@ Migrate from static Kubernetes manifests (in Phase 2) to a reusable and versione
 2. Migrate all Kubernetes manifests (`Deployment`, `Service`, `PVC`, `ConfigMap`) into `templates/`.
 3. Templatize configuration using `.Values` references.
 
+**Important!** Tag chart version with a `v` prefix (e.g.,`v1.0.0`) in `version` field of Chart.yaml
+- Many CI pipelines, especially `GitHub Actions` use this prefix to correctly trigger workflows
+```yaml
+# Chart.yaml
+apiVersion: v2
+name: quakewatch-web-chart
+description: Helm chart for the QuakeWatch earthquake monitoring app
+type: application
+
+version: v1.0.0 # Important! Prefix with 'v'
+
+appVersion: "1.0.0" # informational only
+```
+
+
 **c. Key Manifests**
 
 - `templates/deployment.yaml` – Flask app pod with volume mount and env vars.
@@ -54,26 +69,36 @@ Migrate from static Kubernetes manifests (in Phase 2) to a reusable and versione
 
 #### Helm Chart Publishing to OCI (Docker Hub)
 ##### a. Goal
-  Use Helm's **native OCI support** to push packaged charts to Docker Hub as OCI artifacts.
+  Use Helm's **native OCI support** to push packaged charts to Docker Hub as **OCI artifacts**.
 
  ##### b. Steps
   
 ```bash
-   # Authenticate 
+   # Authenticate to Docker Hub
    helm registry login registry-1.docker.io \
    --username alkon100 \
    --password-stdin
 ```   
 ```bash
-  # Package the chart
+  # Package the chart 
   helm package ./quakewatch-web-chart
   
-  # Save the chart to local OCI cache
-  helm chart save quakewatch-web-chart-0.1.0.tgz \
-    oci://registry-1.docker.io/alkon100/quakewatch-web-chart:v0.1.0
-  
-  # Push the chart to Docker Hub
-  helm chart push oci://registry-1.docker.io/alkon100/quakewatch-web-chart:v0.1.0
+  # Output: quakewatch-web-chart-v1.0.0.tgz 
+ ```
+```bash
+   # If there are few packaged charts, take the name of the latest one
+   # Note: Sort these names in ascending order and take the last
+   CHART_FILE=$(ls -1 quakewatch-web-chart-*.tgz | sort -V | tail -n1)
+   echo $CHART_FILE
 ```
- - **Important!** Tag charts as v0.1.0 (with a `v` prefix) to match Git tags and GitHub Actions conventions.
-      This improves consistency across CI pipelines, Helm charts, and Git history.
+
+
+```bash
+  # Push the chart to Docker Hub as an OCI Artifact 
+  # helm push <chart-name>-<version>.tgz oci://<registry>/<namespace>
+  # Note: <namespace> is usually username or org name 
+  
+  helm push "$CHART_FILE" oci://registry-1.docker.io/alkon100
+  #helm push quakewatch-web-chart-v1.0.0.tgz oci://registry-1.docker.io/alkon100
+```
+ 
