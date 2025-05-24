@@ -1,0 +1,18 @@
+#  quakewatch-web-chart/templates/pvc.yaml
+{{- if .Values.pvc.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ default (include "quakewatch-web-chart.fullname" .) .Values.pvc.name }}
+  labels:
+    {{- include "quakewatch-web-chart.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml .Values.pvc.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.pvc.storage | quote }}
+  {{- if .Values.pvc.storageClassName }} # <--- This block is essential
+  storageClassName: {{ .Values.pvc.storageClassName }}
+  {{- end }}
+{{- end }}

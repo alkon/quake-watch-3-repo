@@ -1,0 +1,16 @@
+# quakewatch-web-chart/templates/servivce.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "quakewatch-web-chart.fullname" . }}
+  labels:
+    {{- include "quakewatch-web-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "quakewatch-web-chart.selectorLabels" . | nindent 4 }}

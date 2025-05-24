@@ -1,0 +1,29 @@
+# quakewatch-web-chart/templates/tests/test-pvc-access.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "quakewatch-web-chart.fullname" . }}-test-pvc-access"
+  annotations:
+    "helm.sh/hook": test
+  labels:
+    {{- include "quakewatch-web-chart.labels" . | nindent 4 }}
+spec:
+  restartPolicy: Never
+  containers:
+    - name: write-read-check
+      image: busybox
+      command: ["sh", "-c"]
+      args:
+        - |
+          echo "TestLogEntry" > {{ .Values.configMap.data.shared_log_path }}/test.log && \
+          echo "Write succeeded" && \
+          cat {{ .Values.configMap.data.shared_log_path }}/test.log && \
+          rm {{ .Values.configMap.data.shared_log_path }}/test.log && \
+          echo "Cleanup succeeded"
+      volumeMounts:
+        - name: log-volume
+          mountPath: {{ .Values.configMap.data.shared_log_path | quote }}
+  volumes:
+    - name: log-volume
+      persistentVolumeClaim:
+        claimName: {{ default (include "quakewatch-web-chart.fullname" .) .Values.pvc.name }}
