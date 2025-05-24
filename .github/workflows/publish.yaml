@@ -47,57 +47,6 @@ jobs:
           version: v3.14.0 # Pin the appropriate stable version
 
       # 5. Log in to Docker Hub’s OCI registry
-      - name: Log in to Docker Hub OCI
-        uses: docker/login-action@v3
-        with:name: Publish Image & Chart
-
-on:
-  push:
-    branches:
-      - main # Or your main branch (e.g., master)
-#    paths:
-#      - "*-chart/**" # Trigger only on changes in the *-chart directory
-
-permissions:
-  contents: read
-  packages: write
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-
-    steps:
-      # 1. Checkout your code
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # 2. Decide on your image tag (we use the commit SHA)
-      - name: Set IMAGE_TAG
-        id: vars
-        run: echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_OUTPUT
-
-      # 3. Log in to GitHub Container Registry and push the image
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build & push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.IMAGE_TAG }}
-
-      # 4. Install Helm CLI
-      - name: Set up Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: v3.14.0 # Pin the appropriate stable version
-
-      # 5. Log in to Docker Hub’s OCI registry
       - name: Restore Docker config
         run: |
           mkdir -p ~/.docker
