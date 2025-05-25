@@ -101,4 +101,69 @@ appVersion: "1.0.0" # informational only
   helm push "$CHART_FILE" oci://registry-1.docker.io/alkon100
   #helm push quakewatch-web-chart-v1.0.0.tgz oci://registry-1.docker.io/alkon100
 ```
+---
+
+### Deploy Stage: GitHub Actions → Argo CD → Kubernetes
+
+This section describes how to wire **remote GitHub-hosted runner** into a **local Kubernetes cluster** running Argo CD, to trigger a full GitOps sync remotely.
+
+---
+
+#### 1. Declaratively expose Argo CD via NodePort + Ingress
+a. Use `nip.io` for **DNS**
+
+```bash
+# 1. Fetch the public IP
+PUBLIC_IP=$(curl -s ifconfig.me)
+
+# 2. Build the nip.io hostname
+INGRESS_HOST="${PUBLIC_IP}.nip.io"
+echo {$INGRESS_HOST}
+
+# 3. (Optional) verify it resolves
+ping -c1 "$INGRESS_HOST"
+```
+- The networking flow:
+```text
+  [ External client ]
+      ↓ DNS (via nip.io)
+[ Ingress-NGINX controller Pod ]
+      ↓ proxies HTTPS → 
+[ argocd-server Service (ClusterIP port 443) ]
+      ↓ forwards to Pod port 8080 (TLS)
+[ argocd-server Pod ]
+
+```
+- Note 1: `hostNetwork: true` on the controller means the controller Pod listens on the host’s network
+- Note 2: The Service still needs to be of `type: NodePort`, so that Argo CD’s own TLS port 443 is exposed internally, but Ingress talks to its clusterIP on port 443 (matching the ingress.yaml rule).
+
+b. Configure GitHub Secrets 
+     
+- In the current GitHub repo: Settings → Secrets and variables → Actions, create:
+
+`ARGOCD_SERVER` - The DNS name, i.e. the $INGRESS_HOST above 
+
+`ARGOCD_APP` - The name of the Argo CD Application CR (the value in its `metadata.name` field)
+
+
+Under the project `argocd-manifests/infra/` folder, add:
+
+```yaml
+# argocd-manifests/infra/service-nodeport.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-server
+  namespace: argocd
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: argocd-server
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8080
+      nodePort: 31000        # pick an unused port in 30000–32767
+```
+
  
