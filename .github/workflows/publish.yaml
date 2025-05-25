@@ -1,4 +1,4 @@
-name: Publish Image and Chart to GHCR
+name: Publish Image and Chart
 
 on:
   push:
