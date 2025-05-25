@@ -2,8 +2,9 @@ name: Verify & Sync via Argo CD
 
 on:
   workflow_run:
-    workflows: ["Publish Image & Chart"]
-    types: [completed]
+    workflows: ["Publish Image & Chart to GHCR"]
+    types:
+      - completed
 
 env:
   ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
