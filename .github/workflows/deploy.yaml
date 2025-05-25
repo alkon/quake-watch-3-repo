@@ -16,19 +16,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Restore your kubeconfig so `kubectl` can talk to the cluster ───────
+      # 1. Restore your kubeconfig so `kubectl` can talk to the cluster
       - name: Restore kubeconfig
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
 
-      # 2. Generate a short-lived Argo CD token inside the cluster ────────────
+      # 2. Generate a short-lived Argo CD token inside the cluster
       - name: Create Argo CD SA token
         run: |
           echo "ARGOCD_TOKEN=$(kubectl -n argocd create token ci-argocd-sa --duration=1h)" \
             >> $GITHUB_ENV
 
-      # 3. Install & verify the Argo CD CLI ───────────────────────────────────
+      # 3. Install & verify the Argo CD CLI
       - name: Install argocd CLI
         run: |
           ARGOCD_VERSION=v2.14.11
@@ -39,14 +39,14 @@ jobs:
           sudo mv argocd-linux-amd64 /usr/local/bin/argocd
           argocd version --client
 
-      # 4. Log in to your Argo CD server ──────────────────────────────────────
+      # 4. Log in to your Argo CD server
       - name: Login to Argo CD
         run: |
           argocd login $ARGOCD_SERVER \
             --token $ARGOCD_TOKEN \
             --insecure
 
-      # 5. Trigger a GitOps sync & wait until it’s healthy ────────────────────
+      # 5. Trigger a GitOps sync & wait until it’s healthy
       - name: Sync & wait for healthy
         run: |
           argocd app sync  $ARGOCD_APP
