@@ -10,7 +10,6 @@ on:
 env:
   ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
   ARGOCD_APP:    ${{ secrets.ARGOCD_APP }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
