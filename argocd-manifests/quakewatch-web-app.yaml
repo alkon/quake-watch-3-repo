@@ -1,0 +1,31 @@
+# argocd-manifests/quakewatch-web-app.yaml
+# A public‐chart Application for quakewatch-web-chart in Argo CD
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: quakewatch-web
+spec:
+  source:
+    repoURL: oci://ghcr.io/alkon/quakewatch-web-chart
+#    chart: quakewatch-web-chart   # (ignored for OCI, but kept for clarity)
+#    targetRevision: 1.0.1         # or leave unset to pick the latest semver
+    path: argocd-manifests         # the root path for all manifests managed by Argo CD
+      directory:
+        recurse: true          # ← scan sub‐directories, too
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+
+  project: default
+
+  syncPolicy:
+    automated:
+      prune: true      # garbage-collect resources no longer in chart
+      selfHeal: true      # auto-fix drift from git
+    retry:
+      limit: 5         # retry up to 5 times on failure
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
