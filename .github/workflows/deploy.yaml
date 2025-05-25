@@ -1,9 +1,9 @@
-name: Verify & Sync via Argo CD
+name: Verify and Sync via Argo CD
 
 on:
   workflow_run:
     workflows:
-      - "Publish Image & Chart to GHCR"
+      - "Publish Image and Chart to GHCR"
     types:
       - completed
 
