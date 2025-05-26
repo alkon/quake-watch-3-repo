@@ -1,0 +1,34 @@
+name: Test Local ArgoCD Access
+
+on:
+  workflow_dispatch: # Allows you to manually trigger this workflow
+
+jobs:
+  test-access:
+    runs-on: self-hosted # THIS IS CRUCIAL: tells GitHub to use your self-hosted runner
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get Nginx Ingress HTTPS NodePort
+      id: nodeport
+      run: |
+        NODE_PORT=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
+        echo "::set-output name=https_nodeport::$NODE_PORT"
+        echo "Nginx Ingress HTTPS NodePort: $NODE_PORT"
+
+    - name: Test ArgoCD HTTPS via NodePort with custom Host header
+      run: |
+        NODE_PORT=${{ steps.nodeport.outputs.https_nodeport }}
+        ARGO_URL="https://127.0.0.1:$NODE_PORT"
+        ARGO_HOST="77.127.167.27.nip.io"
+        echo "Attempting to curl $ARGO_URL with Host: $ARGO_HOST"
+
+        # This curl command attempts to reach your Nginx Ingress Controller
+        # It uses --insecure because your nip.io certificate is self-signed
+        # It sets the Host header for Nginx to match your Ingress rule
+        curl -vvv --insecure -H "Host: $ARGO_HOST" $ARGO_URL
+      env:
+        # You might need to set KUBECONFIG if your runner doesn't inherit it
+        # This is typically not needed if running on the same machine as kubectl context
+        KUBECONFIG: ~/.kube/config
