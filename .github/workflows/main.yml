@@ -50,7 +50,7 @@ jobs:
       - name: Login to Argo CD
         run: |
           argocd login $ARGOCD_SERVER \
-            --token $ARGOCD_TOKEN \
+            --auth-token $ARGOCD_TOKEN \
             --insecure
 
       # 5. Trigger a GitOps sync & wait until it’s healthy
