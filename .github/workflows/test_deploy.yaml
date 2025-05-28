@@ -1,0 +1,65 @@
+name: Verify and Sync with ArgoCD
+
+on:
+  workflow_run:
+    workflows:
+      - "Publish Image and Chart"
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      # Optional: You can define inputs that a user can provide when manually triggering.
+      # For example, a reason for the manual run:
+      reason:
+        description: 'Reason for manual trigger'
+        required: false
+        default: 'Manual test from UI'
+
+env:
+  ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+  ARGOCD_APP:    ${{ secrets.ARGOCD_APP }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Restore your kubeconfig so `kubectl` can talk to the cluster
+      - name: Restore kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+      # 2. Generate a short-lived Argo CD token inside the cluster
+      - name: Create Argo CD SA token
+        run: |
+          echo "ARGOCD_TOKEN=$(kubectl -n argocd create token ci-argocd-sa --duration=1h)" \
+            >> $GITHUB_ENV
+
+      # 3. Install & verify the Argo CD CLI
+      - name: Install argocd CLI
+        run: |
+          ARGOCD_VERSION=v2.14.11
+          curl -sSL \
+            -o argocd-linux-amd64 \
+            https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-amd64
+          chmod +x argocd-linux-amd64
+          sudo mv argocd-linux-amd64 /usr/local/bin/argocd
+          argocd version --client
+
+      - name: Verify argocd path and version
+        run: |
+          which argocd
+          argocd version --client
+
+      # 4. Log in to your Argo CD server
+      - name: Login to Argo CD
+        run: |
+          argocd login $ARGOCD_SERVER \
+            --token $ARGOCD_TOKEN \
+            --insecure
+
+      # 5. Trigger a GitOps sync & wait until it’s healthy
+      - name: Sync & wait for healthy
+        run: |
+          argocd app sync  $ARGOCD_APP
+          argocd app wait  $ARGOCD_APP --timeout 120
